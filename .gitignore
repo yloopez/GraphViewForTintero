@@ -1,0 +1,19 @@
+# Build output — publish the zip as a release asset instead
+dist/
+
+# Kept locally, not published
+BACKLOG.md
+
+# Tintero's own files: kept locally for reference, not ours to redistribute
+AGENTS.md
+tintero-plugin-sdk.d.ts
+
+# Editors, OS and tooling clutter
+.vscode/
+.idea/
+.claude/
+node_modules/
+Thumbs.db
+desktop.ini
+.DS_Store
+*.log

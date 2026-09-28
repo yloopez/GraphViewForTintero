@@ -1,0 +1,31 @@
+{
+  "id": "io.github.yloopez.graph-view",
+  "name": "Graph View",
+  "version": "1.2.0",
+  "description": "An Obsidian-style interactive graph: characters, worldbuilding, files, scenes, timelines and the links between them. Read-only.",
+  "author": { "name": "yloopez", "url": "https://github.com/yloopez" },
+  "license": "MIT",
+  "type": "app",
+  "surfaces": ["app"],
+  "main": "plugin.js",
+  "icon": "icon.svg",
+  "scopes": [
+    "project.read",
+    "project.read.files",
+    "project.read.docs",
+    "project.read.characters",
+    "project.read.worldbuilding",
+    "project.read.templates",
+    "project.read.notes",
+    "project.read.collections",
+    "project.read.tags",
+    "project.read.timelines",
+    "project.read.flowmaps",
+    "project.read.plotgrid",
+    "project.read.cardboards",
+    "project.read.scenes",
+    "project.read.images",
+    "ui.notification",
+    "storage"
+  ]
+}

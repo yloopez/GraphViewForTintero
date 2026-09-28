@@ -1,0 +1,393 @@
+/* Graph View for Tintero ----------------------------------------------------- */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+#plugin-root { position: absolute; inset: 0; }
+
+.tgv-root {
+  --tgv-accent: var(--accent-color, #c98a48);
+  --tgv-fg: var(--text-primary, #e8e2d6);
+  --tgv-fg-dim: var(--text-secondary, #a98e6b);
+  --tgv-bg: var(--bg-color, #16130f);
+  --tgv-panel: rgba(0, 0, 0, 0.30);
+  --tgv-line: rgba(127, 127, 127, 0.30);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font-family: var(--font-ui, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  font-size: 12px;
+  color: var(--tgv-fg);
+  background: var(--tgv-bg);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tgv-root.tgv-light {
+  --tgv-fg: var(--text-primary, #2c2621);
+  --tgv-fg-dim: var(--text-secondary, #6f6355);
+  --tgv-panel: rgba(255, 255, 255, 0.55);
+  --tgv-line: rgba(0, 0, 0, 0.14);
+}
+
+/* touch-action: the graph handles its own drags and pinches. Without it the
+   browser claims a finger drag as a scroll and cancels the pointer mid-gesture. */
+.tgv-canvas { position: absolute; inset: 0; display: block; cursor: grab; touch-action: none; }
+.tgv-canvas.tgv-panning { cursor: grabbing; }
+.tgv-canvas.tgv-over-node { cursor: pointer; }
+
+/* Floating chrome ---------------------------------------------------------- */
+
+.tgv-pane {
+  position: absolute;
+  z-index: 6;
+  background: var(--tgv-panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--tgv-line);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+}
+
+.tgv-toolbar {
+  top: 12px; left: 12px; right: 12px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 9px;
+  flex-wrap: wrap;
+}
+
+.tgv-title {
+  font-weight: 600; letter-spacing: .2px;
+  margin-right: 2px; white-space: nowrap;
+  display: flex; align-items: center; gap: 7px;
+}
+.tgv-title svg { width: 15px; height: 15px; color: var(--tgv-accent); }
+.tgv-title .tgv-project { color: var(--tgv-fg-dim); font-weight: 400; }
+
+.tgv-spacer { flex: 1 1 40px; }
+
+.tgv-search-wrap { position: relative; flex: 0 1 220px; min-width: 120px; display: flex; }
+
+.tgv-search {
+  width: 100%;
+  background: rgba(127, 127, 127, .16);
+  border: 1px solid var(--tgv-line);
+  border-radius: 7px;
+  color: inherit; font: inherit;
+  padding: 5px 8px;
+  outline: none;
+}
+.tgv-search:focus { border-color: var(--tgv-accent); }
+.tgv-search::placeholder { color: var(--tgv-fg-dim); }
+
+/* Search results ----------------------------------------------------------- */
+
+.tgv-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  z-index: 9;                     /* above the details pane, which shares top:62px */
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px 0;
+  background: var(--tgv-panel);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--tgv-line);
+  border-radius: 9px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.34);
+}
+.tgv-results.tgv-hidden { display: none; }
+
+.tgv-result {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 10px; cursor: pointer; line-height: 1.5;
+}
+.tgv-result:hover { background: rgba(127, 127, 127, .16); }
+.tgv-result.tgv-active { background: rgba(201, 138, 72, .22); }
+.tgv-result .tgv-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tgv-result .tgv-edge {
+  color: var(--tgv-fg-dim); font-size: 10px; white-space: nowrap;
+  max-width: 44%; overflow: hidden; text-overflow: ellipsis;
+}
+
+.tgv-result-none { padding: 6px 10px; color: var(--tgv-fg-dim); }
+
+.tgv-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(127, 127, 127, .14);
+  border: 1px solid var(--tgv-line);
+  border-radius: 7px;
+  color: inherit; font: inherit;
+  padding: 5px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tgv-btn:hover { background: rgba(127, 127, 127, .26); }
+.tgv-btn:active { transform: translateY(1px); }
+.tgv-btn[aria-pressed="true"] {
+  background: rgba(201, 138, 72, .26);
+  border-color: var(--tgv-accent);
+  color: var(--tgv-accent);
+}
+.tgv-btn svg { width: 13px; height: 13px; }
+.tgv-btn.tgv-spin svg { animation: tgv-rot 1s linear infinite; }
+@keyframes tgv-rot { to { transform: rotate(360deg); } }
+
+.tgv-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--tgv-fg-dim); flex: none;
+}
+.tgv-dot.tgv-live { background: #5ac57a; box-shadow: 0 0 0 0 rgba(90,197,122,.7); animation: tgv-pulse 2.4s ease-out infinite; }
+@keyframes tgv-pulse { 70% { box-shadow: 0 0 0 6px rgba(90,197,122,0); } 100% { box-shadow: 0 0 0 0 rgba(90,197,122,0); } }
+
+/* Side panels -------------------------------------------------------------- */
+
+/* --tgv-top and --tgv-bottom are measured by the script: the toolbar wraps on a
+   narrow window, so the panels cannot assume it is one line tall. */
+.tgv-side {
+  top: var(--tgv-top, 62px); left: 12px; width: 208px;
+  max-height: calc(100% - var(--tgv-top, 62px) - var(--tgv-bottom, 48px));
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.tgv-side.tgv-collapsed { display: none; }
+
+.tgv-side-scroll { overflow-y: auto; padding: 4px 0 8px; }
+
+.tgv-section-title {
+  padding: 9px 11px 5px;
+  font-size: 10px; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--tgv-fg-dim);
+  display: flex; justify-content: space-between; align-items: baseline; gap: 6px;
+}
+.tgv-section-title button {
+  background: none; border: none; color: var(--tgv-accent);
+  font: inherit; font-size: 10px; cursor: pointer; padding: 0;
+  text-transform: none; letter-spacing: 0;
+}
+.tgv-section-title button:hover { text-decoration: underline; }
+
+.tgv-filter {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 11px; cursor: pointer; line-height: 1.5;
+}
+.tgv-filter:hover { background: rgba(127, 127, 127, .12); }
+.tgv-filter.tgv-off { opacity: .38; }
+.tgv-swatch { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+/* The legend swatch is a live colour input. Strip the native chrome so it reads
+   as the same dot it replaced, just clickable. */
+.tgv-swatch-input {
+  width: 11px; height: 11px; padding: 0; flex: none;
+  border: none; border-radius: 50%; background: none;
+  cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+}
+.tgv-swatch-input::-webkit-color-swatch-wrapper { padding: 0; }
+.tgv-swatch-input::-webkit-color-swatch { border: none; border-radius: 50%; }
+.tgv-swatch-input::-moz-color-swatch { border: none; border-radius: 50%; }
+.tgv-swatch-input:hover { box-shadow: 0 0 0 2px var(--tgv-line); }
+.tgv-swatch-input:focus-visible { outline: 1px solid var(--tgv-accent); outline-offset: 2px; }
+
+/* Fallback when the engine has no native colour picker: a plain hex field. */
+.tgv-swatch-hex {
+  width: 58px; flex: none;
+  background: rgba(127, 127, 127, .16);
+  border: 1px solid var(--tgv-line);
+  border-radius: 5px;
+  font: inherit; font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 10px;
+  padding: 1px 4px;
+}
+
+.tgv-title-actions { display: flex; align-items: center; gap: 8px; }
+
+/* Hides the filter panel. Points the way the panel goes: left beside the
+   graph, down on a narrow screen where the panel is a bottom sheet. */
+.tgv-section-title .tgv-side-hide { display: inline-flex; color: var(--tgv-fg-dim); }
+.tgv-section-title .tgv-side-hide:hover { color: var(--tgv-fg); }
+.tgv-side-hide svg { width: 14px; height: 14px; }
+.tgv-reset-colors.tgv-hidden { display: none; }
+.tgv-filter .tgv-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tgv-filter .tgv-count { color: var(--tgv-fg-dim); font-variant-numeric: tabular-nums; font-size: 11px; }
+
+.tgv-slider { padding: 5px 11px 8px; }
+.tgv-slider label {
+  display: flex; justify-content: space-between;
+  color: var(--tgv-fg-dim); margin-bottom: 3px; font-size: 11px;
+}
+.tgv-slider input { width: 100%; accent-color: var(--tgv-accent); }
+
+/* Details ------------------------------------------------------------------ */
+
+.tgv-details {
+  top: var(--tgv-top, 62px); right: 12px; width: 244px;
+  max-height: calc(100% - var(--tgv-top, 62px) - var(--tgv-bottom, 48px));
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.tgv-details.tgv-hidden { display: none; }
+
+.tgv-det-head {
+  padding: 11px 12px 9px;
+  border-bottom: 1px solid var(--tgv-line);
+  display: flex; gap: 9px; align-items: flex-start;
+}
+.tgv-det-portrait {
+  width: 40px; height: 40px; border-radius: 7px; flex: none;
+  object-fit: cover; background: rgba(127,127,127,.2);
+}
+.tgv-det-name { font-weight: 600; font-size: 13px; line-height: 1.3; word-break: break-word; }
+.tgv-det-kind {
+  color: var(--tgv-fg-dim); font-size: 10px; margin-top: 2px;
+  text-transform: uppercase; letter-spacing: .07em;
+  display: flex; align-items: center; gap: 5px;
+}
+.tgv-det-pin {
+  margin-left: auto; flex: none;
+  background: none; border: 1px solid var(--tgv-line); border-radius: 6px;
+  color: var(--tgv-fg-dim); font: inherit; font-size: 10px; line-height: 1.4;
+  padding: 1px 7px; cursor: pointer;
+}
+.tgv-det-pin:hover { color: var(--tgv-fg); }
+.tgv-det-pin[aria-pressed="true"] { color: var(--tgv-accent); border-color: var(--tgv-accent); }
+
+.tgv-det-close {
+  margin-left: 6px; background: none; border: none; cursor: pointer;
+  color: var(--tgv-fg-dim); font-size: 15px; line-height: 1; padding: 0 2px;
+}
+.tgv-det-close:hover { color: var(--tgv-fg); }
+
+.tgv-det-body { overflow-y: auto; padding: 4px 0 10px; }
+.tgv-det-desc { padding: 8px 12px 2px; color: var(--tgv-fg-dim); line-height: 1.5; word-break: break-word; }
+.tgv-det-meta { padding: 4px 12px; color: var(--tgv-fg-dim); line-height: 1.6; }
+.tgv-det-meta b { color: var(--tgv-fg); font-weight: 500; }
+
+.tgv-rel {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 12px; cursor: pointer;
+}
+.tgv-rel:hover { background: rgba(127, 127, 127, .14); }
+.tgv-rel .tgv-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tgv-rel .tgv-edge { color: var(--tgv-fg-dim); font-size: 10px; white-space: nowrap; max-width: 46%; overflow: hidden; text-overflow: ellipsis; }
+
+.tgv-raw {
+  margin: 4px 12px 2px;
+  padding: 7px 8px;
+  max-height: 260px;
+  overflow: auto;
+  background: rgba(127, 127, 127, .12);
+  border: 1px solid var(--tgv-line);
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--tgv-fg-dim);
+  white-space: pre;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Status ------------------------------------------------------------------- */
+
+.tgv-status {
+  bottom: 12px; left: 12px;
+  padding: 5px 10px;
+  color: var(--tgv-fg-dim);
+  display: flex; align-items: center; flex-wrap: wrap; gap: 3px 9px;
+  font-variant-numeric: tabular-nums;
+  /* Leaves room for the hint; it wraps rather than running underneath it. */
+  max-width: calc(100% - 330px);
+  box-sizing: border-box;
+}
+
+.tgv-hint { bottom: 12px; right: 12px; padding: 5px 10px; color: var(--tgv-fg-dim); white-space: nowrap; }
+
+.tgv-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 10px;
+  background: var(--tgv-bg);
+  color: var(--tgv-fg-dim);
+  text-align: center; padding: 24px;
+  /* Sits over the canvas but under the floating panels, and never swallows a
+     click — an "everything is hidden" message must not block the filters. */
+  z-index: 4;
+  pointer-events: none;
+}
+.tgv-overlay.tgv-hidden { display: none; }
+.tgv-overlay h2 { font-size: 14px; color: var(--tgv-fg); font-weight: 600; margin: 0; }
+.tgv-overlay p { margin: 0; max-width: 380px; line-height: 1.55; }
+.tgv-bar { width: 190px; height: 3px; border-radius: 2px; background: rgba(127,127,127,.25); overflow: hidden; }
+.tgv-bar i { display: block; height: 100%; width: 32%; border-radius: 2px; background: var(--tgv-accent); animation: tgv-slide 1.1s ease-in-out infinite; }
+@keyframes tgv-slide { 0% { margin-left: -34%; } 100% { margin-left: 100%; } }
+
+.tgv-badge {
+  background: rgba(201, 138, 72, .22);
+  color: var(--tgv-accent);
+  border-radius: 5px; padding: 1px 6px; font-size: 10px;
+}
+
+/* Smaller windows ---------------------------------------------------------- */
+
+/* The hint is the first thing to go: it is the least useful thing on screen,
+   and the status line needs the room. */
+@media (max-width: 860px) {
+  .tgv-hint { display: none; }
+  .tgv-status { max-width: calc(100% - 24px); }
+}
+
+/* Narrow: phones, and a desktop window squeezed down. The breakpoint must match
+   NARROW_MAX in plugin.js. The toolbar drops to icons, and the two panels stop
+   floating beside the graph and take turns as one sheet along the bottom. */
+@media (max-width: 760px) {
+  .tgv-toolbar { top: 8px; left: 8px; right: 8px; gap: 6px; padding: 6px; }
+  .tgv-title, .tgv-spacer { display: none; }
+  /* A zero basis: from `auto`, the input's natural width (about twenty
+     characters) pushed the buttons onto a second line on a phone. */
+  .tgv-search-wrap { flex: 1 1 0; min-width: 0; }
+  .tgv-btn { padding: 6px 8px; }
+  .tgv-btn span { display: none; }
+
+  .tgv-side,
+  .tgv-details {
+    top: auto; left: 8px; right: 8px; bottom: 8px; width: auto;
+    max-height: min(60%, calc(100% - var(--tgv-top, 62px) - 8px));
+  }
+  .tgv-root.tgv-has-details .tgv-side { display: none; }
+  .tgv-side-hide svg { transform: rotate(-90deg); }
+
+  .tgv-status { left: 8px; bottom: 8px; max-width: calc(100% - 16px); }
+  /* The sheet sits where the status line does, and matters more. */
+  .tgv-side:not(.tgv-collapsed) ~ .tgv-status,
+  .tgv-details:not(.tgv-hidden) ~ .tgv-status { display: none; }
+}
+
+/* Touch screens ------------------------------------------------------------ */
+
+/* Targets sized for a fingertip, around 40px, on touch screens only so the
+   desktop keeps its compact panel. Comes after the narrow block on purpose:
+   a phone matches both, and these sizes should win. */
+@media (pointer: coarse) {
+  .tgv-btn { padding: 9px 11px; }
+  .tgv-btn svg { width: 16px; height: 16px; }
+  /* Below 16px, iOS zooms the whole page when the field takes focus. */
+  .tgv-search { padding: 8px 10px; font-size: 16px; }
+  .tgv-result { padding: 10px 12px; }
+  .tgv-filter { padding: 9px 14px; }
+  .tgv-swatch-input { width: 20px; height: 20px; }
+  .tgv-section-title button { padding: 6px 4px; margin: -6px -4px; }
+  .tgv-rel { padding: 10px 12px; }
+  .tgv-det-pin { font-size: 12px; padding: 6px 12px; }
+  .tgv-det-close { font-size: 22px; padding: 4px 8px; margin-left: 2px; }
+  .tgv-slider input { height: 28px; }
+}
+
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: rgba(127, 127, 127, .34); border-radius: 5px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(127, 127, 127, .55); background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
