@@ -20,13 +20,21 @@ build if a permission that could write is ever added.
 
 ## Install
 
+1. **[Download plugin.zip](https://github.com/yloopez/GraphViewForTintero/releases/latest/download/plugin.zip)**
+   (the latest release; older versions are on the
+   [Releases page](https://github.com/yloopez/GraphViewForTintero/releases)).
+2. In Tintero: **Settings → Plugins → Load local plugin (dev)**, and pick the
+   zip you downloaded.
+
+Graph View appears in the sidebar menu; opening it fills the main view.
+
+### Build from source
+
 ```sh
 make            # validate, test, and build dist/plugin.zip
 ```
 
-Then, in Tintero: **Settings → Plugins → Load local plugin (dev)** and pick
-`dist/plugin.zip`. Graph View appears in the sidebar menu; opening it fills the
-main view.
+Then install `dist/plugin.zip` the same way as above.
 
 `make` needs `node`, plus either `zip` or PowerShell to build the archive. If you
 do not have `make`, the four files in `src/` zipped flat is the whole product:
