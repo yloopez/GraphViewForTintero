@@ -5,7 +5,10 @@ files, scenes, notes, tags, timelines, flow maps and grids become nodes; every
 relation Tintero already records between them becomes a link. Drag it around,
 search it, filter it, click anything to see what it touches.
 
-*An unofficial plugin, not affiliated with Tintero.*
+> **Disclaimer:** Graph View was Datguy's idea. Datguy is a member of the
+> Tintero community who commissioned me to build it. Datguy planned its
+> features and tested it before release, and is giving it to the Tintero
+> community for free. It is an unofficial plugin, not affiliated with Tintero.
 
 ## Read-only
 
